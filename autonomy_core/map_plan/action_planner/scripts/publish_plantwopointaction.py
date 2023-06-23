@@ -15,6 +15,7 @@ def publisher():
     while not rospy.is_shutdown():
         print( i )
         if i >= 20:
+            print("Max Iter Reached, Exitting...")
             rospy.signal_shutdown("Max Iter Reached, Exitting...")
         i += 1
 

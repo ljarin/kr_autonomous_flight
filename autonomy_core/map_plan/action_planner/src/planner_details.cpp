@@ -136,8 +136,9 @@ void MPLPlanner::setup() {
     const decimal_t du_z = uz_max;
     for (decimal_t dx = -u_max; dx <= u_max; dx += du)
       for (decimal_t dy = -u_max; dy <= u_max; dy += du)
-        for (decimal_t dz = -uz_max; dz <= uz_max; dz += du_z)
+        for (decimal_t dz = -uz_max; dz <= uz_max; dz += du_z){
           U.push_back(Vec3f(dx, dy, dz));
+        }
   }
 
   mp_planner_util_.reset(new MPL::VoxelMapPlanner(verbose_));  // verbose
