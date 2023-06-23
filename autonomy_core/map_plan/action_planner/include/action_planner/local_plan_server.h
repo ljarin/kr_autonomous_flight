@@ -14,12 +14,19 @@
 #include <boost/thread/thread.hpp>
 #include <chrono>
 #include <string>
+#include <iostream>
+#include <fstream>
 
 class LocalPlanServer {
  public:
   explicit LocalPlanServer(const ros::NodeHandle& nh);
 
   bool aborted_;
+
+  bool write_summary_to_file_ = true;
+  uint N_iter_ = 0;
+  std::ofstream poly_array_file; 
+  double start_x_ = 0.0; 
 
  private:
   // TODO(laura) what is the difference btw the node handles

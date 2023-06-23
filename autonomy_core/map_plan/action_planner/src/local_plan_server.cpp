@@ -1,6 +1,10 @@
 #include <action_planner/local_plan_server.h>
 
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
+  if (write_summary_to_file_){
+    poly_array_file.open("/home/yifei/planning_summary_server.csv",std::ios_base::app);
+    poly_array_file << "Planning Iteration, Starting x, Success Status, Planning Time(ms) \n";
+  }
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
   local_as_ = std::make_unique<
@@ -69,6 +73,11 @@ void LocalPlanServer::goalCB() {
       end_timer - start_timer);
   ROS_INFO("Local goalCB took %f ms", duration.count() / 1000.0);
   planner_type_->setGoal(*goal_ptr);
+  if (write_summary_to_file_){
+      //get start location as key to which ones successed
+      poly_array_file << std::to_string(N_iter_)+ ", " + std::to_string(start_x_) + ", " + std::to_string(!aborted_) + ", " + std::to_string(duration.count() / 1000.0) + "\n";
+    }
+  N_iter_++;
 }
 
 void LocalPlanServer::process_goal(
@@ -86,10 +95,15 @@ void LocalPlanServer::process_goal(
   MPL::Waypoint3D start, goal;
   // instead of using current odometry as start, we use the given start position
   // for consistency between old and new trajectories in replan process
+  
   start.pos = kr::pose_to_eigen(as_goal.p_init);
   start.vel = kr::twist_to_eigen(as_goal.v_init);
   start.acc = kr::twist_to_eigen(as_goal.a_init);
   start.jrk = kr::twist_to_eigen(as_goal.j_init);
+
+  if (write_summary_to_file_){
+    start_x_ = start.pos(0);
+  }
 
   // Important: define use position, velocity, acceleration or jerk as control
   // inputs, note that the lowest order "false" term will be used as control

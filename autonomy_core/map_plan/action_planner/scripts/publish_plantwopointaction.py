@@ -10,9 +10,14 @@ def publisher():
     rospy.init_node('publish_two_point_action')
     start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10)
     rospy.init_node('publish_two_point_action')
-
+    i = 0
     rate = rospy.Rate(0.5)  #
     while not rospy.is_shutdown():
+        print( i )
+        if i >= 20:
+            rospy.signal_shutdown("Max Iter Reached, Exitting...")
+        i += 1
+
         msg = PlanTwoPointActionGoal()
         msg.header.frame_id = "map"
         msg.header.stamp = rospy.Time.now()
