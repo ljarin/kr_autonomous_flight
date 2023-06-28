@@ -25,7 +25,7 @@ trajectory_planner:
   max_j: 2.0 # x-y-direction maximum jerk, recommended value: for 2-D 3, for 3-D 2
   max_u: 2.0 # x-y-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: for 2-D 3, for 3-D 1, for each axis jerk increment choice is -max_u, 0, max_u
   use_3d_local: true # local planner operates in 3D (true) or 2D (false)
-  planner_type: 1 # 0: MPL, 1: Optimization Planner, 2: dispersion planner
+  planner_type: 0 # 0: MPL, 1: Optimization Planner, 2: dispersion planner
 
   use_3d_global: false # global planner operates in 3D (true, in this case use_3d_local has to be set as true) or 2D (false)
   z_cost_factor: 1 # global map z cost factor, this also influences the vertical semi field of view of global planner into 45-degree / z_cost_factor  (cost_along_z = z_cost_factor * cost_along_x_or_y)
@@ -35,7 +35,7 @@ trajectory_planner:
   max_a_z: 3.0 # z-direction maximum acceleration, recommended value: 3.0
   max_j_z: 3.0 # z-direction maximum jerk, recommended value: 3.0
   max_u_z: 1.0 # z-direction control inputs increase / decrease step, must be smaller than max_j, recommended value: 3.0
-  tol_pos: 3.0 # tolerance of distance for goal region, 0 means no tolerance, -1 means no limitation, recommended value: 3.0 for 2-D and 5.0 for 3-D
+  tol_pos: 1.0 # tolerance of distance for goal region, 0 means no tolerance, -1 means no limitation, recommended value: 3.0 for 2-D and 5.0 for 3-D
   global_goal_tol_vel: 2.0 # tolerance of velocity for goal region, recommended value: 2.0 for 2-D and 3.0 for 3-D
   global_goal_tol_acc: -1 # tolerance of acceleration for goal region, recommended value: -1
   dt: 1.0 # execution time for each primitive, recommended value: 1.0
@@ -46,16 +46,16 @@ trajectory_planner:
   optimization/bb_xy_size: 4.0 # xy half size of the intial polytope of flight corridor
   optimization/bb_z_up: 2.0 # z up size of the intial polytope of flight corridor
   optimization/bb_z_down: 2.0 # z down size of the intial polytope of flight corridor
-  optimization/w_time: 8.0 # penalty weight to minimize the total time (4~20)
+  optimization/w_time: 40.0 # penalty weight to minimize the total time (4~20)
   optimization/w_vel: 360.0 # penalty weight to minimize the the violate velocity (100 ~ 1000)
   optimization/w_acc: 360.0 # penalty weight to minimize the the violate accelrate (100 ~ 1000)
   optimization/w_sta_obs: 20.0 # penalty weight to enforce the position inside flight corridor (100 ~ 1000)
-  search/max_tau: 0.6 # time interval for kinodynamic search
-  search/init_max_tau: 0.6 # time interval for kinodynamic search (usually don't change it)
-  search/horizon: 13.0 # local search horizon
+  search/max_tau: 1.0 # time interval for kinodynamic search
+  search/init_max_tau: 1.0 # time interval for kinodynamic search (usually don't change it)
+  search/horizon: 20.0 # local search horizon
   search/lambda_heu: 5.0 # heu weight
   search/allocate_num: 100000 # total allocate space to store nodes
-  search/resolution_astar: 0.3 # tolerance for a star search
+  search/resolution_astar: 0.1 # tolerance for a star search
   search/vis_check_num: 15 # number of checking point along each segement
   search/w_time: 3.0 # time weight
   search/use_jerk: false # set false now

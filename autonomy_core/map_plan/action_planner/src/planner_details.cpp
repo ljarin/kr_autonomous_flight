@@ -31,6 +31,9 @@ kr_planning_msgs::SplineTrajectory OptPlanner::plan(
   endState << goal.pos(0), goal.vel(0), goal.acc(0), goal.pos(1), goal.vel(1),
       goal.acc(1), goal.pos(2), goal.vel(2), goal.acc(2);
 
+
+  auto t1 = ros::Time::now();   
+
   bool valid = planner_manager_->localPlanner(startState, endState);
   if (valid) {
     opt_traj_ = planner_manager_->local_data_.traj_;
@@ -39,6 +42,12 @@ kr_planning_msgs::SplineTrajectory OptPlanner::plan(
   } else {
     return kr_planning_msgs::SplineTrajectory();
   }
+
+
+  auto t2 = ros::Time::now();   
+
+  std::cout << "debug :::: planning time: " << (t2 - t1).toSec() << std::endl;
+
 
   kr_planning_msgs::SplineTrajectory spline_msg;
   spline_msg.header.frame_id = frame_id_;
