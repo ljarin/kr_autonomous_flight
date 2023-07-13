@@ -4,33 +4,43 @@ from kr_planning_msgs.msg import PlanTwoPointActionGoal
 from visualization_msgs.msg import MarkerArray, Marker
 from copy import deepcopy
 from random import randrange, seed, uniform
-import pandas as pd
-filename = '/home/yifei/ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
+
 def publisher():
-    print("reading "+filename)
-    start_goal = pd.read_csv(filename)
     path_pub = rospy.Publisher('/local_plan_server/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10)
     rospy.init_node('publish_two_point_action')
     start_and_goal_pub = rospy.Publisher('/start_and_goal', MarkerArray, queue_size=10)
     rospy.init_node('publish_two_point_action')
 
-    rate = rospy.Rate(0.5)  #
-    for i in range(start_goal.shape[0]):
-        if rospy.is_shutdown():
-            break
-        print(i)
+    rate = rospy.Rate(10)  #
+    i = 0
+    while i < 56:
         msg = PlanTwoPointActionGoal()
         msg.header.frame_id = "map"
         msg.header.stamp = rospy.Time.now()
-        msg.goal.p_init.position.x = start_goal['xi'][i]
-        msg.goal.p_init.position.y = start_goal['yi'][i]
-        msg.goal.p_init.position.z = 1
-        msg.goal.p_final.position.x = start_goal['xf'][i]
-        msg.goal.p_final.position.y = start_goal['yf'][i]
-        msg.goal.p_final.position.z = 1
-        
-        #do you want velocity initial and final to be zero?
-
+        msg.goal.p_init.position.x = uniform(0,2)
+        msg.goal.p_init.position.y = uniform(1,10)
+        msg.goal.p_init.position.z = uniform(1,10)
+        msg.goal.p_final.position.x = uniform(18,20)
+        msg.goal.p_final.position.y = uniform(1,10)
+        msg.goal.p_final.position.z = uniform(1,10)
+        i += 1
+    
+    
+    while not rospy.is_shutdown():
+        print(i)
+        x = input("Please enter to plan again")
+        if x == 'q':
+            break
+        i += 1
+        msg = PlanTwoPointActionGoal()
+        msg.header.frame_id = "map"
+        msg.header.stamp = rospy.Time.now()
+        msg.goal.p_init.position.x = uniform(0,2)
+        msg.goal.p_init.position.y = uniform(1,10)
+        msg.goal.p_init.position.z = uniform(1,10)
+        msg.goal.p_final.position.x = uniform(18,20)
+        msg.goal.p_final.position.y = uniform(1,10)
+        msg.goal.p_final.position.z = uniform(1,10)
         start_and_goal = MarkerArray()
         start = Marker()
         start.header = msg.header
@@ -50,6 +60,7 @@ def publisher():
         path_pub.publish(msg)
         start_and_goal_pub.publish(start_and_goal)
         rate.sleep()
+
 
 if __name__ == '__main__':
     try:

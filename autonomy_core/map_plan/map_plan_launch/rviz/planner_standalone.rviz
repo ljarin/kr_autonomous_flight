@@ -95,7 +95,7 @@ Visualization Manager:
       AccScale: 0.019999999552965164
       AccVis: false
       Class: kr_planning_rviz_plugins/SplineTrajectory
-      Enabled: true
+      Enabled: false
       Name: SplineTrajectory
       Num of samples: 1000
       PosColor: 204; 51; 204
@@ -103,7 +103,7 @@ Visualization Manager:
       Queue Size: 10
       Topic: /local_plan_server/trajectory
       Unreliable: false
-      Value: true
+      Value: false
       VelColor: 85; 85; 255
       VelScale: 0.019999999552965164
       VelVis: false
@@ -116,13 +116,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /local_plan_server/trajectory_planner/kino_astar_list
       Name: Marker
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 0.20000000298023224
       BoundColor: 255; 0; 0
       Class: decomp_rviz_plugins/PolyhedronArray
@@ -151,14 +151,14 @@ Visualization Manager:
       Marker Topic: /local_plan_server/trajectory_planner/visited
       Name: MarkerArray
       Namespaces:
-        pos: true
+        {}
       Queue Size: 100
       Value: true
     - AccColor: 10; 200; 55
       AccScale: 0.019999999552965164
       AccVis: false
       Class: kr_planning_rviz_plugins/SplineTrajectory
-      Enabled: true
+      Enabled: false
       Name: SplineTrajectory
       Num of samples: 100
       PosColor: 114; 159; 207
@@ -166,7 +166,7 @@ Visualization Manager:
       Queue Size: 10
       Topic: /local_plan_server/trajectory_planner/search_trajectory
       Unreliable: false
-      Value: true
+      Value: false
       VelColor: 85; 85; 255
       VelScale: 0.019999999552965164
       VelVis: false
@@ -175,7 +175,7 @@ Visualization Manager:
       Marker Topic: /visualizer/trajectory
       Name: Marker
       Namespaces:
-        trajectory: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -183,7 +183,7 @@ Visualization Manager:
       Marker Topic: /visualizer/mesh
       Name: Marker
       Namespaces:
-        mesh: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -216,6 +216,14 @@ Visualization Manager:
       Name: Marker
       Namespaces:
         {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /iLQR_path
+      Name: Marker
+      Namespaces:
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -259,17 +267,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 4.131352424621582
-        Y: 2.562002420425415
-        Z: 5.00485897064209
+        X: 10.754288673400879
+        Y: 1.4128344058990479
+        Z: 5.308675289154053
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8997980952262878
+      Pitch: 1.4397964477539062
       Target Frame: ground_truth/quadrotor/quadrotor
-      Yaw: 4.014925956726074
+      Yaw: 3.3649141788482666
     Saved: ~
 Window Geometry:
   Displays:
