@@ -289,7 +289,7 @@ void normalizePosCoeffMat(double duration, Eigen::MatrixXd& coeffMat) {
 kr_planning_msgs::SplineTrajectory SplineTrajfromDiscreteTwoPoints(
     const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
   int degree_plus1 = 6;
-  double dt = traj_dis_msg.t[1] - traj_dis_msg.t[0];
+  double dt = traj_dis_msg.dt;
   kr_planning_msgs::SplineTrajectory traj_msg;
   traj_msg.header = traj_dis_msg.header;
   traj_msg.dimensions = 3;
@@ -297,7 +297,7 @@ kr_planning_msgs::SplineTrajectory SplineTrajfromDiscreteTwoPoints(
   kr_planning_msgs::Spline spline;
   for (int dim = 0; dim < 3; dim++) {
     traj_msg.data.push_back(spline);
-    traj_msg.data[dim].t_total = traj_dis_msg.t[traj_dis_msg.t.size() - 1];
+    traj_msg.data[dim].t_total = traj_dis_msg.dt * (traj_dis_msg.N - 1);
   }
   // calc coeff
   for (int traj_idx = 0; traj_idx < traj_dis_msg.pos.size() - 1; traj_idx++) {
@@ -348,7 +348,7 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
                          // nonzero velocity issue
     const kr_planning_msgs::TrajectoryDiscretized& traj_dis_msg) {
   int degree_plus1 = 6;
-  double dt = traj_dis_msg.t[degree_plus1 - 1];
+  double dt = 5 * traj_dis_msg.dt;
   kr_planning_msgs::SplineTrajectory traj_msg;
   traj_msg.header = traj_dis_msg.header;
   traj_msg.dimensions = 3;
@@ -360,16 +360,19 @@ SplineTrajfromDiscrete(  // this method will make beginning and end have an
     time_mat.col(i) = time_vec.array().pow(i);
   }
   kr_planning_msgs::Spline spline;
-  for (int dim = 0; dim < 3; dim++) traj_msg.data.push_back(spline);
+  for (int dim = 0; dim < 3; dim++) 
+  {
+    traj_msg.data.push_back(spline);
+    //@yuwei
+    traj_msg.data[dim].t_total =  (traj_dis_msg.N -1) * traj_dis_msg.dt;
+  }
   // ROS_INFO("Time matrix is %f", time_mat);
   for (int traj_idx = 0;
        traj_idx + (degree_plus1 - 1) < traj_dis_msg.pos.size();  // in range
        traj_idx += (degree_plus1 - 1)) {
     // this is to have 1 repeat point to make sure things connect
-    for (int dim = 0; dim < 3; dim++)
-      traj_msg.data[dim].t_total = traj_dis_msg.t[traj_idx + degree_plus1];
-    // if (traj_idx + (degree_plus1-1) >= traj_dis_msg.pos.size()) {
 
+    // if (traj_idx + (degree_plus1-1) >= traj_dis_msg.pos.size()) {
     //   break;
     // }
     Eigen::MatrixXd pos_mat = Eigen::MatrixXd::Zero(degree_plus1, 3);
@@ -469,7 +472,7 @@ void LocalPlanServer::process_result(
       traj_act_msg.goal.pos_pts = traj_dis_msg.pos;
       traj_act_msg.goal.vel_pts = traj_dis_msg.vel;
       traj_act_msg.goal.acc_pts = traj_dis_msg.acc;
-      traj_act_msg.goal.dt      = traj_dis_msg.t[1] -  traj_dis_msg.t[0];
+      traj_act_msg.goal.dt      = traj_dis_msg.dt;
 
     }
 

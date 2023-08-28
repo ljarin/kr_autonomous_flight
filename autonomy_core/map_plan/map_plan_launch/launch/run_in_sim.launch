@@ -73,7 +73,6 @@
         <arg name="odom_frame" value="$(arg world_frame_id)"/>
         <arg name="map_frame" value="$(arg world_frame_id)"/>
         <arg name="mapper_config" value="$(arg mapper_config)"/>
-
         <arg name="cloud" value="/global_cloud"/>
     </include>
 
@@ -89,8 +88,6 @@
 
       <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
       <param name="poly_srv_name"  value="/$(arg mav_name)/mav_services/poly_tracker"/>
-
-
     </node>
 
 
