@@ -74,7 +74,7 @@ class Evaluater:
         # self.client = SimpleActionClient('/local_plan_server0/plan_local_trajectory', PlanTwoPointAction)
         self.client_list = []
         self.client_name_list = []
-        self.num_planners = 1
+        self.num_planners = 10
         self.num_trials = 50
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
