@@ -506,6 +506,8 @@ void LocalPlanServer::process_result(
         std::string tracker_str = "kr_trackers/PolyTracker";
         kr_tracker_msgs::Transition transition_cmd;
         transition_cmd.request.tracker = tracker_str;
+
+        traj_act_msg.goal.t_start = ros::Time::now(); 
         traj_goal_ac_->sendGoal(traj_act_msg.goal);
         srv_transition_.call(transition_cmd);
         if (transition_cmd.response.success) ROS_INFO("Transition success!");
