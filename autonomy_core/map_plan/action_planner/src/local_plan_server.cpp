@@ -1,6 +1,8 @@
 #include <action_planner/local_plan_server.h>
 #include <geometry_msgs/Point.h>
 
+#include <iostream>
+
 LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
   local_map_sub_ =
       pnh_.subscribe("local_voxel_map", 2, &LocalPlanServer::localMapCB, this);
@@ -498,18 +500,24 @@ void LocalPlanServer::process_result(
       std_srvs::Trigger trg;
       ros::service::call(poly_srv_name_, trg);
     } else {
-      std::string tracker_str = "kr_trackers/PolyTracker";
-      kr_tracker_msgs::Transition transition_cmd;
-      transition_cmd.request.tracker = tracker_str;
-      traj_goal_ac_->sendGoal(traj_act_msg.goal);
-      srv_transition_.call(transition_cmd);
-      if (transition_cmd.response.success) ROS_INFO("Transition success!");
-      traj_goal_ac_->waitForResult(ros::Duration(20.0));
-      kr_tracker_msgs::PolyTrackerResultConstPtr result_ptr =
-          traj_goal_ac_->getResult();
-      tracking_error = result_ptr->total_tracking_error;
-      odom_pts = result_ptr->odom_history;
-      ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+      std::cout << "Plan Success, Enter R to execute!" << std::endl;
+      if (getchar() == 'R') {
+        ROS_WARN("Executing!!!");
+        std::string tracker_str = "kr_trackers/PolyTracker";
+        kr_tracker_msgs::Transition transition_cmd;
+        transition_cmd.request.tracker = tracker_str;
+        traj_goal_ac_->sendGoal(traj_act_msg.goal);
+        srv_transition_.call(transition_cmd);
+        if (transition_cmd.response.success) ROS_INFO("Transition success!");
+        traj_goal_ac_->waitForResult(ros::Duration(20.0));
+        kr_tracker_msgs::PolyTrackerResultConstPtr result_ptr =
+            traj_goal_ac_->getResult();
+        tracking_error = result_ptr->total_tracking_error;
+        odom_pts = result_ptr->odom_history;
+        ROS_INFO("Poly Tracker finished: Tracking Error = %f", tracking_error);
+      } else {
+        ROS_WARN("Execution aborted!");
+      }
     }
   }  // success case
 
