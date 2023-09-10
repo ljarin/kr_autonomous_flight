@@ -21,14 +21,21 @@ drag_coefficient: 0.0 -->
   <arg name="planner_config" default="$(find control_launch)/config/tracker_params_mp.yaml"/>
 
 
-  <!-- Mav related stuff -->
-  <arg name="mav_name" default="quadrotor"/>
+  <arg name="mav_name" default="f250_ariel"/>
   <arg name="mav_id" default="1"/>
   <arg name="mav_type" default="hummingbird"/>
-  <arg name="odom_topic" default="/$(arg mav_name)/odom"/>
+  <arg name="world_frame_id" default="map"/>
+  <arg name="sim" default="1"/>
+  <arg name="vicon" default="1"/>
+  <arg name="vicon_fps" default="100"/>
+  <arg name="slow_baud_rate" default="true"/>
+  <arg name="odom_topic" default="/vicon/falcon250v10/odom"/>
 
-  <arg name="initial_position/x" default="-1.5"/>
-  <arg name="initial_position/y" default="0"/>
+
+  <!-- Mav related stuff -->
+
+  <arg name="initial_position/x" default="0"/>
+  <arg name="initial_position/y" default="-1"/>
   <arg name="initial_position/z" default="0"/>
 
   <arg name="color/r" default="0.0"/>
@@ -36,7 +43,7 @@ drag_coefficient: 0.0 -->
   <arg name="color/b" default="1.0"/>
   <arg name="color/a" default="0.7"/>
 
-  <arg name="mass"       default="0.5"/> <!--0.5 in sim -->
+  <arg name="mass"       default="1.45"/> <!--0.5 in sim -->
   <arg name="grav_acc"   default="9.81"/>
   <arg name="min_thrust" default="-1.0"/> <!-- any positive number creates bug-->
   <arg name="max_thrust" default="31.0"/>
@@ -65,60 +72,6 @@ drag_coefficient: 0.0 -->
 
   <arg name="map_resolution" default="0.25"/>  <!--be 0.1, 0.2, 0.25, 0.5-->
 
-  <!-- Control stuff -->
-  <include file="$(find kr_mav_launch)/launch/example_control.launch">
-    <arg name="nodelet_manager_name" value="$(arg nodelet_manager_name)"/>
-    <arg name="mass" value="$(arg mass)"/>
-    <arg name="mav_name" value="$(arg mav_name)"/>
-    <arg name="mav_type" value="$(arg mav_type)"/>
-    <arg name="odom_topic" value="$(arg odom_topic)"/>
-  </include>
-
-
-  <group ns="$(arg mav_name)">
-    <!-- Simulator -->
-    <include file="$(find kr_mav_launch)/launch/sim.launch">
-      <arg name="mav_name" value="$(arg mav_name)"/>
-      <arg name="mav_type" value="$(arg mav_type)"/>
-
-      <arg name="world_frame_id" value="$(arg world_frame_id)"/>
-      <arg name="initial_position/x" value="$(arg initial_position/x)"/>
-      <arg name="initial_position/y" value="$(arg initial_position/y)"/>
-      <arg name="initial_position/z" value="$(arg initial_position/z)"/>
-      <arg name="color/r" value="$(arg color/r)"/>
-      <arg name="color/g" value="$(arg color/g)"/>
-      <arg name="color/b" value="$(arg color/b)"/>
-      <arg name="color/a" value="$(arg color/a)"/>
-      <arg name="odom_topic" value="$(arg odom_topic)"/>
-
-      <arg name="gravity"    value="$(arg grav_acc)"/>
-      <arg name="mass" value="$(arg mass)"/>
-      <arg name='Ixx' value="$(arg M_Ixx)"/>
-      <arg name='Iyy' value="$(arg M_Iyy)"/>
-      <arg name='Izz' value="$(arg M_Izz)"/>
-      <arg name='arm_length' value="$(arg arm_length)"/>  
-      <arg name='kf' value="$(arg kf)"/>
-      <arg name='km' value="$(arg km)"/>
-
-    </include>
-  </group>
-
-    <!-- <include file="$(find map_plan_launch)/launch/mapper.launch">
-        <arg name="odom_frame" value="$(arg world_frame_id)"/>
-        <arg name="map_frame" value="$(arg world_frame_id)"/>
-        <arg name="mapper_config" value="$(arg mapper_config)"/>
-        <arg name="cloud" value="$(arg point_cloud)"/>
-
-        <arg name="map/x_size"     value="$(arg map_size_x)" />
-        <arg name="map/y_size"     value="$(arg map_size_y)" />
-        <arg name="map/z_size"     value="$(arg map_size_z)" />
-        <arg name="map/x_origin"   value="$(arg map_x_origin)"/>
-        <arg name="map/y_origin"   value="$(arg map_y_origin)"/>
-        <arg name="map/z_origin"   value="$(arg map_z_origin)"/>
-
-        <arg name="map/resolution" value="$(arg map_resolution)"/>  
-
-    </include> -->
 
     <!-- Planner -->
     <node pkg="action_planner"  type="local_plan_server"  name="local_plan_server0"  output="screen"  respawn="true">
@@ -252,17 +205,6 @@ drag_coefficient: 0.0 -->
 
       
     </node>
-
-
-    <!-- vicon map generator -->
-    <group if="$(arg vicon_map)">
-      <include file="$(find vicon_env)/launch/vicon_map.launch">
-        <arg name="map_frame_id" value="$(arg world_frame_id)"/>
-      </include>
-    </group>
-  <!-- <arg name="global_map_topic" default="/global_cloud"/>
-  <arg name="global_semantics_topic" default="/global_semantics"/>
- -->
 
 
 
