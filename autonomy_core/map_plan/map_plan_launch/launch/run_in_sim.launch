@@ -12,6 +12,8 @@ motor_time_constant: 0.05
 min_rpm: 1500    0.23N 
 max_rpm: 17096   31N
 drag_coefficient: 0.0 -->
+  <arg name="pass_param_ilqr" default="false"/>
+
   <!-- system related stuff -->
   <arg name="world_frame_id" default="map"/>
   <arg name="slow_baud_rate" default="true"/>
@@ -36,7 +38,9 @@ drag_coefficient: 0.0 -->
   <arg name="color/b" default="1.0"/>
   <arg name="color/a" default="0.7"/>
 
-  <arg name="mass"       default="0.5"/> <!--0.5 in sim -->
+  <arg name="mass_sim"       default="0.5"/> <!--0.5 in sim, 1.5 in iLQR --> 
+  <arg name="mass_plan"       default="1.5"/> <!--1.5 in iLQR --> 
+
   <arg name="grav_acc"   default="9.81"/>
   <arg name="min_thrust" default="-1.0"/> <!-- any positive number creates bug-->
   <arg name="max_thrust" default="31.0"/>
@@ -68,7 +72,7 @@ drag_coefficient: 0.0 -->
   <!-- Control stuff -->
   <include file="$(find kr_mav_launch)/launch/example_control.launch">
     <arg name="nodelet_manager_name" value="$(arg nodelet_manager_name)"/>
-    <arg name="mass" value="$(arg mass)"/>
+    <arg name="mass" value="$(arg mass_sim)"/>
     <arg name="mav_name" value="$(arg mav_name)"/>
     <arg name="mav_type" value="$(arg mav_type)"/>
     <arg name="odom_topic" value="$(arg odom_topic)"/>
@@ -91,14 +95,16 @@ drag_coefficient: 0.0 -->
       <arg name="color/a" value="$(arg color/a)"/>
       <arg name="odom_topic" value="$(arg odom_topic)"/>
 
+  <group if="$(arg pass_param_ilqr)">
       <arg name="gravity"    value="$(arg grav_acc)"/>
-      <arg name="mass" value="$(arg mass)"/>
+      <arg name="mass" value="$(arg mass_sim)"/>
       <arg name='Ixx' value="$(arg M_Ixx)"/>
       <arg name='Iyy' value="$(arg M_Iyy)"/>
       <arg name='Izz' value="$(arg M_Izz)"/>
       <arg name='arm_length' value="$(arg arm_length)"/>  
       <arg name='kf' value="$(arg kf)"/>
       <arg name='km' value="$(arg km)"/>
+  </group>
 
     </include>
   </group>
@@ -136,13 +142,11 @@ drag_coefficient: 0.0 -->
       <param name="map_name"   value="$(arg map_name)"/>
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
-      <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
+      <!-- To improve success of iLQR, don't pass in any parameter-->
+      <param name="trajectory_planner/VehicleMass" value="$(arg mass_plan)"/>
       <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
       <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
       <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
-      <param name='Ixx' value="$(arg M_Ixx)"/>
-      <param name='Iyy' value="$(arg M_Iyy)"/>
-      <param name='Izz' value="$(arg M_Izz)"/>
 
       <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>  
       <param name='trajectory_planner/kf' value="$(arg kf)"/>

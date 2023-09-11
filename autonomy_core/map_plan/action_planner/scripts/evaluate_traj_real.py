@@ -36,6 +36,7 @@ poly_service_name = "/quadrotor/mav_services/poly_tracker"
 line_service_name = "/quadrotor/trackers_manager/transition"
 use_odom_bool = True
 line_tracker_flight_time = 6.0 # seconds
+use_enter_to_continue = True
 
 # filename = '/home/laura/autonomy_ws/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/scripts/map_balls_start_goal.csv'
 
@@ -80,7 +81,7 @@ class Evaluater:
         self.client_name_back_list = []
 
         self.num_planners = 1
-        self.num_trials = 1
+        self.num_trials = 10
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
@@ -149,22 +150,26 @@ class Evaluater:
 
 
 
-    def sample_in_map(self, tol):
+    def sample_in_map(self, tol, start_input = None):
 
         curr_sample_idx = 0
         start_end_feasible = True
         max_iter = 200
+        how_far_away = 0.7 if start_input is None else 0.4
+        # print("how_far_away = ", how_far_away)
         while curr_sample_idx < max_iter:
-        
             rand_start_x = random.uniform(self.map_origin_x + 1 ,  self.map_range_x + self.map_origin_x - 1)
             rand_start_y = random.uniform(self.map_origin_y + 1 ,  self.map_range_y + self.map_origin_y - 1)
             rand_start_z = random.uniform(self.map_origin_z + 0.5, self.map_range_z + self.map_origin_z - 0.5)
 
             rand_goal_x = random.uniform(self.map_origin_x + 1 ,  self.map_range_x + self.map_origin_x - 1)
-            rand_goal_y = random.uniform(self.map_range_y + self.map_origin_y - 2,   self.map_range_y + self.map_origin_y - 1)
+            rand_goal_y = random.uniform(self.map_origin_y + 1,   self.map_range_y + self.map_origin_y - 1)
             rand_goal_z = random.uniform(self.map_origin_z + 0.5, self.map_range_z + self.map_origin_z - 0.5)
 
-            start = np.array([rand_start_x, rand_start_y, rand_start_z])
+            if start_input is None:
+                start = np.array([rand_start_x, rand_start_y, rand_start_z])
+            else:
+                start = start_input
             goal = np.array([rand_goal_x, rand_goal_y, rand_goal_z])
             
 
@@ -172,7 +177,7 @@ class Evaluater:
             dis = np.linalg.norm(start - goal)
             
             #check dist is far and collision free
-            if dis > 0.7 * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol):
+            if dis > how_far_away * self.map_range_x and not self.evaluate_collision([Point(x=start[0], y=start[1], z=start[2]), Point(x=goal[0], y=goal[1], z=goal[2])], tol):
                 break
             
         if curr_sample_idx >= max_iter:
@@ -291,8 +296,7 @@ class Evaluater:
        
             
         print("All action server connected, number of planners = ", self.num_planners)
-        now = datetime.now()
-        file_name_save_time = now.strftime("%m-%d_%H-%M-%S")
+        file_name_save_time = datetime.now().strftime("%m-%d_%H-%M-%S")
 
         param_names = rospy.get_param_names()
         params = {}
@@ -304,175 +308,187 @@ class Evaluater:
             yaml.dump(params, f)
 
         try:
-            with open('ECI_single_line_'+file_name_save_time+'.csv', 'w') as csvfile:
-                csv_writer = csv.writer(csvfile)
-                csv_writer.writerow(['map_type', 'map_seed','map_filename', 'density_index', 'clutter_index', 'structure_index',
-                                     'start_end_feasible', 'planner_frontend', 'planner_backend', 
-                                     'success', 'success_detail', 'traj_time(s)', 'traj_length(m)', 'traj_jerk', 'traj_effort(rpm)',
-                                     'compute_time_poly(ms)', 'compute_time_frontend(ms)', 'compute_time_backend(ms)', 
-                                     'tracking_error(m) avg', 'collision_status','dist_to_goal(m)'])
+            
+            for i in tqdm(range(self.num_trials)):
+                if rospy.is_shutdown():
+                    break
+                ######## CHANGE MAP ######
+                random.seed(i)
 
-                for i in tqdm(range(self.num_trials)):
-                    if rospy.is_shutdown():
-                        break
-                    ######## CHANGE MAP ######
-                    random.seed(i)
+                msg = Int32()
+                msg.data = i
+                # map_response = self.change_map_pub(seed = i) # this is only active when using structure map
+                rospy.sleep(0.5) # maze map is still reading files sequentially
+                    # When change_map returns, the map is changed, but becuase delay, wait a little longer
+                # print(map_response)
+                start_end_feasible = True
+                ####### DEFINE START #####
+                # define start location not actually sending pos_msg since we using a tracker to get there
+                pos_msg = PositionCommand() # change position in simulator
+                pos_msg.header.frame_id = "map"
+                pos_msg.header.stamp = rospy.Time.now()
 
-                    msg = Int32()
-                    msg.data = i
-                    # map_response = self.change_map_pub(seed = i) # this is only active when using structure map
-                    rospy.sleep(0.5) # maze map is still reading files sequentially
-                        # When change_map returns, the map is changed, but becuase delay, wait a little longer
-                    # print(map_response)
-                    start_end_feasible = True
-                    ####### DEFINE START #####
-                    # define start location not actually sending pos_msg since we using a tracker to get there
-                    pos_msg = PositionCommand() # change position in simulator
-                    pos_msg.header.frame_id = "map"
-                    pos_msg.header.stamp = rospy.Time.now()
-
-                    # if self.fix_start_end_location:
-                    #     start = np.array([-9.5, -4, 1.0])
-                    #     end = np.array([9.5, 4, 1.0])
-                    # else:
-                    start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius * 2)
-                    # if use_odom_bool: # hopefully this is always the case, we can specify the start
+                # if self.fix_start_end_location:
+                #     start = np.array([-9.5, -4, 1.0])
+                #     end = np.array([9.5, 4, 1.0])
+                # else:
+                if use_odom_bool:
                     start = np.array([self.odom_data.x,self.odom_data.y, self.odom_data.z]) # if starting from current position
-                    # end = np.array([0.0 ,7.0, 2.0]) 
-                    if not start_end_feasible:
-                        print("Start end Not Feasible")
-                        map_response = self.change_map_pub(seed = i) # this is only active when using structure map
+                    start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius * 2, start_input = start)
+                else:
+                    start, end, start_end_feasible = self.sample_in_map(tol = self.mav_radius * 2)
 
-                        continue
-                    pos_msg.position.x = start[0]
-                    pos_msg.position.y = start[1]
-                    pos_msg.position.z = start[2]
-
-                    pos_msg.velocity.x = 0
-                    pos_msg.velocity.y = 0
-                    pos_msg.velocity.z = 0
-                    pos_msg.yaw = random.uniform(-np.pi,np.pi)
-                    
-                    for client_idx in range(self.num_planners):
-                        client = self.client_list[client_idx]
-                        ##### GO TO START #####
-                        if not use_odom_bool and self.wait_for_things:  #this needs to be done for every client 
-                            traj_act_msg = LineTrackerGoal()
-                            traj_act_msg.x = pos_msg.position.x
-                            traj_act_msg.y = pos_msg.position.y
-                            traj_act_msg.z = pos_msg.position.z
-                            traj_act_msg.yaw = pos_msg.yaw
-                            traj_act_msg.v_des = 0.0
-                            traj_act_msg.a_des = 0.0
-                            traj_act_msg.relative = False
-                            traj_act_msg.t_start = rospy.Time.now()
-                            traj_act_msg.duration = rospy.Duration(line_tracker_flight_time)
-                            self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
-                            #wait while tracker's goal is not received
-                            while True:
-                                rospy.sleep(0.1)
-                                state = self.client_line_tracker.get_state()
-                                if state == 1:
-                                    tqdm.write("Line Tracker Goal Received")
-                                    break
-                                rospy.loginfo_throttle(0.5,f"Waiting for line tracker goal. Current State: {state}")
-                            # state = self.client_line_tracker.get_state() # make sure it received it
-                            # print(f"After sent goal: Action State: {state}")
-                            response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
-                            # self.set_state_pub.publish(pos_msg) #then change state so no error remain
-
-                            tqdm.write(response.message)
-
-                            self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(line_tracker_flight_time + 3.0)) #flying
-                            response = self.client_line_tracker.get_result()
-                            if response is not None:
-                                tqdm.write("Line Tracker Finished")
-                            else:
-                                tqdm.write("Line Tracker Failed!!!!!!!!!!!!!")
-
-
-                        ##### SET GOAL #####
-                        msg = PlanTwoPointGoal()
-                        if use_odom_bool:
-                            msg.p_init.position = self.odom_data # if starting from current position
-                            msg.p_final.position.z = self.odom_data.z # this is usually hardware, so z is more sensitive
-                        else:
-                            msg.p_init.position = pos_msg.position # if starting from random position
-                            msg.p_final.position.z = end[2] # this is not hardware, so set it to whatever
-                        print("Starting from ", msg.p_init.position)
-                        # set goal to be random
-                        msg.p_final.position.x = end[0]
-                        msg.p_final.position.y = end[1]
-                        msg.check_vel = False
-
-                        self.send_start_goal_viz(msg)
-
-                        client.send_goal(msg) #motion
-
-                        self.effort_temp = 0.0 # 
-                        self.effort_counter = 1 # to avoid divide by zero
-
-                        # Waits for the server to finish performing the action.
-                        if self.wait_for_things:
-                            client.wait_for_result(rospy.Duration.from_sec(20.0)) 
-                        else:
-                            client.wait_for_result(rospy.Duration.from_sec(4.0)) 
                 
-                        # stop accumulating the effort
-                        self.effort[i,client_idx] = self.effort_temp / self.effort_counter
-                        result = client.get_result()
+                # if use_odom_bool: # hopefully this is always the case, we can specify the start
+                # end = np.array([0.0 ,7.0, 2.0]) 
+                if not start_end_feasible:
+                    print("Start end Not Feasible")
+                    map_response = self.change_map_pub(seed = i) # this is only active when using structure map
 
-                        #TODO(Laura) check if the path is collision free and feasible
-                        if result:
-                            self.success[i,client_idx] = result.success
-                            tqdm.write("Solve Status: trial "+ str(i) + " planner: " + str(client_idx) + " status: "+ str(result.policy_status))
-                            self.success_detail[i,client_idx] = result.policy_status
-                            # print(result.odom_pts) #@Yuwei: this should work, try this out! 
-                            # Odom is also returned in result.odom_pts
-                                # rospy.loginfo(result.odom_pts)
+                    continue
+                pos_msg.position.x = start[0]
+                pos_msg.position.y = start[1]
+                pos_msg.position.z = start[2]
 
-                            self.poly_compute_time[i,client_idx] = result.computation_time
-                            self.compute_time_front[i,client_idx] = result.compute_time_front_end
-                            self.compute_time_back[i,client_idx] = result.compute_time_back_end
-                            self.tracking_error[i,client_idx] = result.tracking_error
-                            if result.success:
-                            
-                                self.traj_time[i,client_idx] = result.traj.data[0].t_total
-                                # self.traj_cost[i,client_idx] = self.computeCost(result.traj, self.rho)
-                                self.traj_jerk[i,client_idx] = self.computeJerk(result.traj)
-                                if ~self.wait_for_things: # if no tracking then check collision of the planned traj
-                                    result.odom_pts.clear()
-                                    for t in np.arange(0, result.traj.data[0].t_total, 0.02):
-                                        pos_t = evaluate(result.traj, t, 0)
-                                        pos_t_pt = Point()
-                                        pos_t_pt.x = pos_t[0]
-                                        pos_t_pt.y = pos_t[1]
-                                        pos_t_pt.z = pos_t[2]
+                pos_msg.velocity.x = 0
+                pos_msg.velocity.y = 0
+                pos_msg.velocity.z = 0
+                pos_msg.yaw = random.uniform(-np.pi,np.pi)
+                
+                for client_idx in range(self.num_planners):
+                    client = self.client_list[client_idx]
+                    ##### GO TO START #####
+                    if not use_odom_bool and self.wait_for_things:  #this needs to be done for every client 
+                        traj_act_msg = LineTrackerGoal()
+                        traj_act_msg.x = pos_msg.position.x
+                        traj_act_msg.y = pos_msg.position.y
+                        traj_act_msg.z = pos_msg.position.z
+                        traj_act_msg.yaw = pos_msg.yaw
+                        traj_act_msg.v_des = 0.0
+                        traj_act_msg.a_des = 0.0
+                        traj_act_msg.relative = False
+                        traj_act_msg.t_start = rospy.Time.now()
+                        traj_act_msg.duration = rospy.Duration(line_tracker_flight_time)
+                        self.client_line_tracker.send_goal(traj_act_msg)# first change tracker goal msg
+                        #wait while tracker's goal is not received
+                        while True:
+                            rospy.sleep(0.1)
+                            state = self.client_line_tracker.get_state()
+                            if state == 1:
+                                tqdm.write("Line Tracker Goal Received")
+                                break
+                            rospy.loginfo_throttle(0.5,f"Waiting for line tracker goal. Current State: {state}")
+                        # state = self.client_line_tracker.get_state() # make sure it received it
+                        # print(f"After sent goal: Action State: {state}")
+                        response = self.transition_tracker('kr_trackers/LineTrackerMinJerk')
+                        # self.set_state_pub.publish(pos_msg) #then change state so no error remain
 
-                                        result.odom_pts.append(pos_t_pt)
-                                        
-                                self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
-                                
+                        tqdm.write(response.message)
 
-                                traj_end_point = np.zeros(3, dtype=np.float32)
-                                traj_end_point[0] = result.odom_pts[-1].x
-                                traj_end_point[1] = result.odom_pts[-1].y
-                                traj_end_point[2] = result.odom_pts[-1].z
-
-
-                                self.dist_to_goal[i, client_idx] = np.linalg.norm(end - traj_end_point)
- 
+                        self.client_line_tracker.wait_for_result(rospy.Duration.from_sec(line_tracker_flight_time + 3.0)) #flying
+                        response = self.client_line_tracker.get_result()
+                        if response is not None:
+                            tqdm.write("Line Tracker Finished")
                         else:
-                            tqdm.write("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
-                            self.success_detail[i,client_idx] = -1
-                    #dont have traj length, so just put 0
-                        csv_writer.writerow([self.map_type, i, map_response.file_name.data, map_response.density_index, map_response.clutter_index, map_response.structure_index,
-                                             start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
+                            tqdm.write("Line Tracker Failed!!!!!!!!!!!!!")
+
+
+                    ##### SET GOAL #####
+                    msg = PlanTwoPointGoal()
+                    if use_odom_bool:
+                        msg.p_init.position = self.odom_data # if starting from current position
+                        msg.p_final.position.z = self.odom_data.z # this is usually hardware, so z is more sensitive
+                    else:
+                        msg.p_init.position = pos_msg.position # if starting from random position
+                        msg.p_final.position.z = end[2] # this is not hardware, so set it to whatever
+                    print("Starting from ", msg.p_init.position)
+                    # set goal to be random
+                    msg.p_final.position.x = end[0]
+                    msg.p_final.position.y = end[1]
+                    msg.check_vel = False
+
+                    self.send_start_goal_viz(msg)
+
+                    client.send_goal(msg) #motion
+
+                    self.effort_temp = 0.0 #  THIS IS NOT WORKING!!!!
+                    self.effort_counter = 1 # to avoid divide by zero
+
+                    # Waits for the server to finish performing the action.
+                    if self.wait_for_things:
+                        client.wait_for_result(rospy.Duration.from_sec(60.0)) 
+                    else:
+                        client.wait_for_result(rospy.Duration.from_sec(4.0)) 
+            
+                    # stop accumulating the effort
+                    self.effort[i,client_idx] = self.effort_temp / self.effort_counter
+                    result = client.get_result()
+
+                    #TODO(Laura) check if the path is collision free and feasible
+                    if result:
+                        self.success[i,client_idx] = result.success
+                        tqdm.write("Solve Status: trial "+ str(i) + " planner: " + str(client_idx) + " status: "+ str(result.policy_status))
+                        self.success_detail[i,client_idx] = result.policy_status
+                        # print(result.odom_pts) #@Yuwei: this should work, try this out! 
+                        # Odom is also returned in result.odom_pts
+                            # rospy.loginfo(result.odom_pts)
+
+                        self.poly_compute_time[i,client_idx] = result.computation_time
+                        self.compute_time_front[i,client_idx] = result.compute_time_front_end
+                        self.compute_time_back[i,client_idx] = result.compute_time_back_end
+                        self.tracking_error[i,client_idx] = result.tracking_error
+                        if result.success:
+                        
+                            self.traj_time[i,client_idx] = result.traj.data[0].t_total
+                            # self.traj_cost[i,client_idx] = self.computeCost(result.traj, self.rho)
+                            self.traj_jerk[i,client_idx] = self.computeJerk(result.traj)
+                            if ~self.wait_for_things: # if no tracking then check collision of the planned traj
+                                result.odom_pts.clear()
+                                for t in np.arange(0, result.traj.data[0].t_total, 0.02):
+                                    pos_t = evaluate(result.traj, t, 0)
+                                    pos_t_pt = Point()
+                                    pos_t_pt.x = pos_t[0]
+                                    pos_t_pt.y = pos_t[1]
+                                    pos_t_pt.z = pos_t[2]
+
+                                    result.odom_pts.append(pos_t_pt)
+                                    
+                            self.collision_cnt[i,client_idx] = self.evaluate_collision(result.odom_pts)
+                            
+
+                            traj_end_point = np.zeros(3, dtype=np.float32)
+                            traj_end_point[0] = result.odom_pts[-1].x
+                            traj_end_point[1] = result.odom_pts[-1].y
+                            traj_end_point[2] = result.odom_pts[-1].z
+
+
+                            self.dist_to_goal[i, client_idx] = np.linalg.norm(end - traj_end_point)
+
+                    else:
+                        rospy.logerr("Server Failure: trial " + str(i) + " planner: " + str(client_idx))
+                        self.success_detail[i,client_idx] = -1
+                #dont have traj length, so just put 0
+                    file_name_save_time_line = datetime.now().strftime("%m-%d_%H-%M-%S")
+                    with open('ECI_single_line_'+file_name_save_time+':'+file_name_save_time_line+'.csv', 'w') as csvfile:
+                        csv_writer = csv.writer(csvfile)
+                        header = ['map_type', 'map_seed','map_filename', 'density_index', 'clutter_index', 'structure_index',
+                                            'start_end_feasible', 'planner_frontend', 'planner_backend', 
+                                            'success', 'success_detail', 'traj_time(s)', 'traj_length(m)', 'traj_jerk', 'traj_effort(rpm)',
+                                            'compute_time_poly(ms)', 'compute_time_frontend(ms)', 'compute_time_backend(ms)', 
+                                            'tracking_error(m) avg', 'collision_status','dist_to_goal(m)']
+                        content = [self.map_type, i, map_response.file_name.data, map_response.density_index, map_response.clutter_index, map_response.structure_index,
+                                                start_end_feasible, self.client_name_front_list[client_idx], self.client_name_back_list[client_idx],
                                             self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                             self.poly_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
-                                            self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]])
-                        input("Press Enter to change map...")
-                        map_response = self.change_map_pub(seed = i) # this is only active when using structure map
+                                            self.tracking_error[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]]
+                        csv_writer.writerow(header)
+                        csv_writer.writerow(content)
+                        for i in range(len(header)):
+                            print(header[i], ":", content[i])
+                    
+                    if use_enter_to_continue:
+                        input("Press Enter for next planner/map...")
+                map_response = self.change_map_pub(seed = i) # this is only active when using structure map
 
         except KeyboardInterrupt:
             tqdm.write("Keyboard Interrupt!")

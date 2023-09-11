@@ -481,7 +481,7 @@ void LocalPlanServer::process_result(
 
     }
     /////////////////////////////////////////////////////////////////////////////////////////////
-    else {
+    else {  // continuous spline
       // http://docs.ros.org/en/api/trajectory_msgs/html/msg/MultiDOFJointTrajectoryPoint.html
       // use this can directly for control
       traj_act_msg.goal.N =
@@ -500,14 +500,19 @@ void LocalPlanServer::process_result(
       std_srvs::Trigger trg;
       ros::service::call(poly_srv_name_, trg);
     } else {
-      std::cout << "Plan Success, Enter R to execute!" << std::endl;
-      if (getchar() == 'R') {
+      std::cout << "Plan Success, Enter R to execute! C to cancel" << std::endl;
+      auto c = getchar();
+      while (c != 'C' && c != 'R') {
+        std::cout << "Try Again, Enter R to execute! C to cancel" << std::endl;
+        c = getchar();
+      }
+      if (c == 'R') {
         ROS_WARN("Executing!!!");
         std::string tracker_str = "kr_trackers/PolyTracker";
         kr_tracker_msgs::Transition transition_cmd;
         transition_cmd.request.tracker = tracker_str;
 
-        traj_act_msg.goal.t_start = ros::Time::now(); 
+        traj_act_msg.goal.t_start = ros::Time::now();
         traj_goal_ac_->sendGoal(traj_act_msg.goal);
         srv_transition_.call(transition_cmd);
         if (transition_cmd.response.success) ROS_INFO("Transition success!");
