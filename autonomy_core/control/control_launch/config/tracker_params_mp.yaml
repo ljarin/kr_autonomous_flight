@@ -29,6 +29,7 @@ trajectory_planner:
   search_planner_type: 4 # 0: MPL, 1: dispersion planner, 2: JPS (geometric) 3: pass through from global planner 4: RRT 5 :SST
   #is being overwriten in the launch file
   opt_planner_text: ["Double Description", "gcopter", "iLQR(Altro)", "None"] #this trick make when no opt planner, the text says none
+  ### CHANGE PASS ILQR PARAM IN RUN_IN_SIM!!!!!!!!
   opt_planner_type: 1 # -1: no planner(BROKEN) 0: Double Description 1: gcopter 2: iLQR(Altro) 
   use_discrete_traj: false # set true to use with ilqr, still a lot of tracking er
   use_tracker_client: true # if we wait for tracker to finish before sending next command

@@ -12,7 +12,6 @@ motor_time_constant: 0.05
 min_rpm: 1500    0.23N 
 max_rpm: 17096   31N
 drag_coefficient: 0.0 -->
-  <arg name="pass_param_ilqr" default="false"/>
 
   <!-- system related stuff -->
   <arg name="world_frame_id" default="map"/>
@@ -95,7 +94,6 @@ drag_coefficient: 0.0 -->
       <arg name="color/a" value="$(arg color/a)"/>
       <arg name="odom_topic" value="$(arg odom_topic)"/>
 
-  <group if="$(arg pass_param_ilqr)">
       <arg name="gravity"    value="$(arg grav_acc)"/>
       <arg name="mass" value="$(arg mass_sim)"/>
       <arg name='Ixx' value="$(arg M_Ixx)"/>
@@ -104,7 +102,6 @@ drag_coefficient: 0.0 -->
       <arg name='arm_length' value="$(arg arm_length)"/>  
       <arg name='kf' value="$(arg kf)"/>
       <arg name='km' value="$(arg km)"/>
-  </group>
 
     </include>
   </group>
@@ -143,14 +140,16 @@ drag_coefficient: 0.0 -->
       <param name="mav_radius" value="$(arg mav_radius)"/>
 
       <!-- To improve success of iLQR, don't pass in any parameter-->
-      <param name="trajectory_planner/VehicleMass" value="$(arg mass_plan)"/>
-      <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
-      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
-      <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
+        <param name="trajectory_planner/VehicleMass" value="$(arg mass_plan)"/>
+        <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
+        <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+        <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
 
-      <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>  
-      <param name='trajectory_planner/kf' value="$(arg kf)"/>
-      <param name='trajectory_planner/km' value="$(arg km)"/>
+        <!-- <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>   -->
+        <!-- ilqr works better like this! -->
+        
+        <param name='trajectory_planner/kf' value="$(arg kf)"/>
+        <param name='trajectory_planner/km' value="$(arg km)"/>
 
     </node>
     
