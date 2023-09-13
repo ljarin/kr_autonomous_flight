@@ -413,7 +413,7 @@ class Evaluater:
                         if self.wait_for_things:
                             client.wait_for_result(rospy.Duration.from_sec(20.0)) 
                         else:
-                            client.wait_for_result(rospy.Duration.from_sec(4.0)) 
+                            client.wait_for_result(rospy.Duration.from_sec(10.0)) 
                 
                         # stop accumulating the effort
                         self.effort[i,client_idx] = self.effort_temp / self.effort_counter
