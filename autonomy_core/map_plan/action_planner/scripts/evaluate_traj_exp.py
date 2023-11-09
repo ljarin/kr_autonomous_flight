@@ -80,7 +80,7 @@ class Evaluater:
         self.client_name_front_list = []
         self.client_name_back_list = []
 
-        self.num_planners = 10
+        self.num_planners = 2
         self.num_trials = 3
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
@@ -320,7 +320,7 @@ class Evaluater:
                     if rospy.is_shutdown():
                         break
                     ######## CHANGE MAP ######
-                    seed_val = i +3000
+                    seed_val = i
                     random.seed(seed_val)
 
 
