@@ -35,6 +35,10 @@ LocalPlanServer::LocalPlanServer(const ros::NodeHandle& nh) : pnh_(nh) {
     ros::spinOnce();
   }
 
+  dynamic_reconfigure::Server<action_planner::LocalPlannerConfig>::CallbackType cb;
+  cb = boost::bind(&LocalPlanServer::reconfigureCallback, this, _1, _2);
+  server_.setCallback(cb);
+
   /**@yuwei : for falcon 250 interface**/
   pnh_.param("poly_srv_name", poly_srv_name_, std::string(" "));
   traj_planner_nh_.param("use_discrete_traj", use_discrete_traj_, false);

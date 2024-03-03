@@ -53,7 +53,7 @@ drag_coefficient: 0.0 -->
   <!-- Map related stuff -->
   <arg name="vicon_map" default="false"/>
   <arg name="point_cloud" default="/global_cloud"/>
-  <arg name="map_name" default="structure_map"/>   <!-- read_grid_map(Obstacle Map in paper) or structure_map(Any map that reads from a file) -->
+  <arg name="map_name" default="structure_map"/>   <!-- read_grid_map(Map in file) or structure_map(Obstacle Map) -->
 
   <arg name="map_frame_id" default="map"/>
   <arg name="map_size_x" default="20"/>
@@ -159,7 +159,7 @@ drag_coefficient: 0.0 -->
       <remap from="~global_cloud" to="$(arg point_cloud)"/>
 
       <!-- Set your favorite planner here, this OVERWRITES the planner in tracker_params_mp.yaml -->
-      <param name="trajectory_planner/search_planner_type" value="1"/>
+      <param name="trajectory_planner/search_planner_type" value="2"/>
       <!-- <param name="trajectory_planner/opt_planner_type" value="1"/> -->
 
       <remap from="~tracker_cmd"   to="/$(arg mav_name)/trackers_manager/poly_tracker/PolyTracker/goal"/>
@@ -262,7 +262,7 @@ drag_coefficient: 0.0 -->
 
       <!-- for multi-map reader, set folder path and use_folder as true -->
 
-      <param name="folder_path" value="$(find param_env)/pcd_icrapapers_dataset/"/>
+      <param name="folder_path" value="$(find param_env)/dataset/"/>
       <param name="use_folder"  value="true"/>
 
       <!-- mode 1 eg -->

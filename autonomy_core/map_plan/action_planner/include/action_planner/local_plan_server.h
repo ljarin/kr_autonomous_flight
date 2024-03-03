@@ -20,6 +20,9 @@
 
 #include "kr_tracker_msgs/PolyTrackerAction.h"
 
+#include <dynamic_reconfigure/server.h>
+#include <action_planner/LocalPlannerConfig.h>
+
 class LocalPlanServer {
  public:
   explicit LocalPlanServer(const ros::NodeHandle& nh);
@@ -69,6 +72,16 @@ class LocalPlanServer {
   std::string frame_id_, poly_srv_name_;
   bool use_discrete_traj_;
   bool use_tracker_client_;
+  
+  dynamic_reconfigure::Server<action_planner::LocalPlannerConfig> server_;
+  void reconfigureCallback(action_planner::LocalPlannerConfig &config, uint32_t level)
+  {
+    // Handle the parameter changes here
+    ROS_INFO("Reconfigure Request: param1 = %f, param2 = %d", 
+                config.param1, config.param2);
+
+    // Update your node's operation based on the new parameters
+  }
 
   /**
    * @brief Goal callback function, prevent concurrent planner modes

@@ -1,0 +1,29 @@
+# planner Name: Tuning parameter name, type, and bounds
+common:
+  - name: "param1"
+    type: "float"
+    bounds: [0.0, 1.0]
+  - name: "param2"
+    type: "int"
+    bounds: [1, 100]
+iLQR(Altro):
+  - name: "param1"
+    type: "float"
+    bounds: [0.0, 1.0]
+  - name: "param2"
+    type: "int"
+    bounds: [1, 100]
+MPL:
+  - name: "param1"
+    type: "float"
+    bounds: [0.0, 1.0]
+  - name: "param2"
+    type: "int"
+    bounds: [1, 100]
+JPS (geometric):
+  - name: "param1"
+    type: "float"
+    bounds: [0.0, 1.0]
+  - name: "param2"
+    type: "int"
+    bounds: [1, 100]

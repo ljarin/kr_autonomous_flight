@@ -29,9 +29,12 @@ import sensor_msgs.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2
 from datetime import datetime
 from param_env_msgs.srv import changeMap
+import optuna
+from dynamic_reconfigure.client import Client
+import yaml
 
-
-
+auto_tune = True
+autotune_config_file = '/home/yifei/ws_mp_design/src/kr_autonomous_flight/autonomy_core/map_plan/action_planner/cfg/auto_tune_config.yaml'
 poly_service_name = "/quadrotor/mav_services/poly_tracker"
 line_service_name = "/quadrotor/trackers_manager/transition"
 use_odom_bool = False
@@ -70,7 +73,7 @@ def evaluate(msg, t, deriv_num):
 
 
 class Evaluater:
-    def __init__(self):
+    def __init__(self, autotune = False):
         # print("reading "+filename)
         # self.start_goals = pd.read_csv(filename)
         # self.path_pub = rospy.Publisher('/local_plan_server0/plan_local_trajectory/goal', PlanTwoPointActionGoal, queue_size=10, latch=True)
@@ -79,11 +82,13 @@ class Evaluater:
         self.client_name_list = []
         self.client_name_front_list = []
         self.client_name_back_list = []
+        self.dyn_reconf_client_list = []
 
         self.num_planners = 2
-        self.num_trials = 3
+        self.num_trials = 30
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
+            self.dyn_reconf_client_list.append(Client('/local_plan_server'+str(i)))
              # self.client2 = SimpleActionClient('/local_plan_server2/plan_local_trajectory', PlanTwoPointAction)
         # self.client3 = SimpleActionClient('/local_plan_server3/plan_local_trajectory', PlanTwoPointAction)
 
@@ -147,9 +152,52 @@ class Evaluater:
 
         self.kdtree = None
         self.pcl_data = None
-
-        self.publisher()
-
+        
+        if autotune:
+            with open(autotune_config_file, 'r') as file:
+                self.param_config = yaml.safe_load(file)
+            # maxmize success rate
+            # currently only tune the first planner
+            self.num_planners = 1
+            self.publisher()
+            self.study = optuna.create_study(study_name='ECI', direction='maximize')
+            self.study.optimize(self.all_objectives, n_trials=100)
+            print("Best params: ", self.study.best_params)
+            print("Best value: ", self.study.best_value)
+            df = self.study.trials_dataframe(attrs=("number", "value", "params", "state"))
+            with open('ECI_study.csv', 'w') as f:
+                f.write(df.to_csv())
+            with open('ECI_study.pkl', 'wb') as f:
+                pickle.dump(self.study, f)
+        else:
+            self.publisher(self.num_trials)
+            
+    def suggest_params(self, trial, planner_i): # this should return config based on the available parameters of the planner
+        config = {}
+        for param in self.param_config[self.client_name_front_list[planner_i]]:
+            if param['type'] == 'float':
+                config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
+            elif param['type'] == 'int':
+                config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
+        for param in self.param_config[self.client_name_back_list[planner_i]]:
+            if param['type'] == 'float':
+                config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
+            elif param['type'] == 'int':
+                config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
+        for param in self.param_config['common']:
+            if param['type'] == 'float':
+                config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
+            elif param['type'] == 'int':
+                config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
+        return config
+    def all_objectives(self, trial, i = 0):
+        # Suggest parameters based on YAML configuration
+        # for i in range(self.num_planners):
+        config = self.suggest_params(trial, i)
+        # Update ROS parameters dynamically
+        self.dyn_reconf_client_list[i].update_configuration(config)
+        success_all_methods = self.publisher(10)
+        return success_all_methods[0]
 
 
 
@@ -281,7 +329,7 @@ class Evaluater:
         start_and_goal.markers.append(goal)
         # self.path_pub.publish(msg)
         self.start_and_goal_pub.publish(start_and_goal) # viz
-    def publisher(self):
+    def publisher(self, num_trials_local = 1):
         search_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/search_planner_text')
         opt_planner_text = rospy.get_param('/local_plan_server0/trajectory_planner/opt_planner_text')
         print("Running ", self.num_planners, "planner combinations for", self.num_trials, "trials", "on map", self.map_type)
@@ -316,7 +364,7 @@ class Evaluater:
                                      'compute_time_poly(ms)', 'compute_time_frontend(ms)', 'compute_time_backend(ms)', 
                                      'tracking_error(m) avg', 'collision_frontend', 'collision_status','dist_to_goal(m)'])
 
-                for i in tqdm(range(self.num_trials)):
+                for i in tqdm(range(num_trials_local)):
                     if rospy.is_shutdown():
                         break
                     ######## CHANGE MAP ######
@@ -493,7 +541,7 @@ class Evaluater:
                                                 self.success[i,client_idx], self.success_detail[i,client_idx], self.traj_time[i,client_idx], 0.0, self.traj_jerk[i,client_idx], self.effort[i,client_idx],
                                                 self.poly_compute_time[i,client_idx], self.compute_time_front[i,client_idx], self.compute_time_back[i,client_idx],
                                                 self.tracking_error[i,client_idx], self.collision_front[i,client_idx], self.collision_cnt[i,client_idx], self.dist_to_goal[i, client_idx]])
-
+                    # input("Press Enter to continue...")
         except KeyboardInterrupt:
             tqdm.write("Keyboard Interrupt!")
 
@@ -580,11 +628,11 @@ class Evaluater:
             writer.writerow(['Map:'+self.map_type+ ' Run:' + str(self.num_trials),'success rate', 'frontend success','traj time', 'traj jerk', 'compute time(ms)', 'compute time front(ms)', 'compute time back(ms)', 'tracking error(m)', 'effort(rpm)', 'collision rate'])
             for i in range(self.num_planners):
                 writer.writerow([self.client_name_list[i], success_rate_avg[i], success_front_rate[i], traj_time_avg[i], traj_jerk_avg[i], poly_compute_time_avg[i], compute_time_front_avg[i], compute_time_back_avg[i], tracking_error_avg[i], effort_avg[i], collision_rate_avg[i]])
-           
+        return success_rate_avg
 
-def subscriber():
+def subscriber(autotune = False):
     rospy.init_node('evaluate_traj')
-    Evaluater()
+    Evaluater(autotune)
 
     # spin() simply keeps python from exiting until this node is stopped
     # rospy.spin()
@@ -592,6 +640,6 @@ def subscriber():
 
 if __name__ == '__main__':
     try:
-        subscriber()
+        subscriber(auto_tune)
     except rospy.ROSInterruptException:
         pass

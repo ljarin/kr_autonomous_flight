@@ -35,17 +35,17 @@ pip3 install pandas tqdm
 
 give path to the json file in tracker_params_mp.yaml : dispersion/graph_file: FILL IN PATH
 
-To change planner, change `tracker_params_mp.yaml`, to run planner quickly without running quad, set `use_tracker_client` to false
+To change planner, change `tracker_params_mp.yaml`, to run planner quickly without running quad simulation(to get control effort and tracking error), set `use_tracker_client` to false
 
-
-- one terminal run :
+You need three terminals to run the code:
+- Terminal 1:
 
 ```
 roslaunch map_plan_launch run_in_sim.launch 
 ```
 
 
-- one terminal run:
+- Terminal 2:
 
 
 ```
@@ -53,11 +53,11 @@ rosrun rqt_mav_manager rqt_mav_manager
 
 ```
 
-click "motors on" and "take off"
+click "motors on" and "take off" (if not running use_tracker_client, you can skip this step and directly run the evaluation script in terminal 3)
 
 
 
-- one terminal run: 
+- Terminal 3: 
 
 ```
 rosrun action_planner evaluate_traj_exp.py
@@ -67,4 +67,4 @@ rosrun action_planner evaluate_traj_exp.py
 To change map back to image one, see `run_in_sim.launch `
 
 
-For experiment, directly run `run_in_exp.launch ` to change quadrotor name
+For experiment, directly run `run_in_exp.launch `, you also need to change the quadrotor name to match motion capture topic

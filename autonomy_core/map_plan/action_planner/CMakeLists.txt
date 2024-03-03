@@ -32,7 +32,10 @@ find_package(
              param_env_msgs
             )
 
-generate_dynamic_reconfigure_options(cfg/ActionPlanner.cfg)
+generate_dynamic_reconfigure_options(
+  cfg/ActionPlanner.cfg
+  cfg/LocalPlanner.cfg
+)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure kr_planning_msgs gcopter kr_ilqr_optimizer)
 include_directories(include ${catkin_INCLUDE_DIRS})
