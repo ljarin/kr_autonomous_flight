@@ -85,7 +85,7 @@ class Evaluater:
         self.dyn_reconf_client_list = []
 
         self.num_planners = 2
-        self.num_trials = 30
+        self.num_trials = 20
         for i in range(self.num_planners): #  0, 1, 2, ... not gonna include the one with no suffix
             self.client_list.append(SimpleActionClient('/local_plan_server'+str(i)+'/plan_local_trajectory', PlanTwoPointAction))
             self.dyn_reconf_client_list.append(Client('/local_plan_server'+str(i)))
@@ -165,30 +165,33 @@ class Evaluater:
             print("Best params: ", self.study.best_params)
             print("Best value: ", self.study.best_value)
             df = self.study.trials_dataframe(attrs=("number", "value", "params", "state"))
-            with open('ECI_study.csv', 'w') as f:
+            now_save = datetime.now()
+            study_file_time = now_save.strftime("%m-%d_%H-%M-%S")
+            with open('ECI_study'+study_file_time+'.csv', 'w') as f:
                 f.write(df.to_csv())
-            with open('ECI_study.pkl', 'wb') as f:
+            with open('ECI_study'+study_file_time+'.pkl', 'wb') as f:
                 pickle.dump(self.study, f)
         else:
             self.publisher(self.num_trials)
             
     def suggest_params(self, trial, planner_i): # this should return config based on the available parameters of the planner
         config = {}
-        for param in self.param_config[self.client_name_front_list[planner_i]]:
-            if param['type'] == 'float':
-                config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
-            elif param['type'] == 'int':
-                config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
+        # for param in self.param_config[self.client_name_front_list[planner_i]]:
+        #     if param['type'] == 'float':
+        #         config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
+        #     elif param['type'] == 'int':
+        #         config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
         for param in self.param_config[self.client_name_back_list[planner_i]]:
             if param['type'] == 'float':
                 config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
             elif param['type'] == 'int':
                 config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
-        for param in self.param_config['common']:
-            if param['type'] == 'float':
-                config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
-            elif param['type'] == 'int':
-                config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
+        # for param in self.param_config['common']:
+        #     if param['type'] == 'float':
+        #         config[param['name']] = trial.suggest_float(param['name'], param['bounds'][0], param['bounds'][1])
+        #     elif param['type'] == 'int':
+        #         config[param['name']] = trial.suggest_int(param['name'], param['bounds'][0], param['bounds'][1])
+        print ('Suggesting Params:' ,config)
         return config
     def all_objectives(self, trial, i = 0):
         # Suggest parameters based on YAML configuration
@@ -196,7 +199,7 @@ class Evaluater:
         config = self.suggest_params(trial, i)
         # Update ROS parameters dynamically
         self.dyn_reconf_client_list[i].update_configuration(config)
-        success_all_methods = self.publisher(10)
+        success_all_methods = self.publisher(20)
         return success_all_methods[0]
 
 
@@ -372,8 +375,9 @@ class Evaluater:
                     random.seed(seed_val)
 
 
-                    map_response = self.change_map_pub(seed = seed_val) # this is only active when using structure map
-                    rospy.sleep(7) # maze map is still reading files sequentially
+                    map_response = self.change_map_pub(seed = seed_val) # using seed is only active when using structure map
+                    tqdm.write("Map Changed!!!!!")
+                    rospy.sleep(5) # maze map is still reading files sequentially
                         # When change_map returns, the map is changed, but becuase delay, wait a little longer
                     # print(map_response)
                     start_end_feasible = True

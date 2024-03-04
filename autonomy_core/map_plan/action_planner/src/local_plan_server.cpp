@@ -164,7 +164,8 @@ void LocalPlanServer::process_goal(
   sg_msg.header.frame_id = frame_id_;
   sg_pub.publish(sg_msg);
 
-  process_result(planner_->plan_composite(start,
+  process_result(planner_->plan_composite(config_,
+                                          start,
                                           goal,
                                           local_map_cleared,
                                           local_no_infla_map_cleared,

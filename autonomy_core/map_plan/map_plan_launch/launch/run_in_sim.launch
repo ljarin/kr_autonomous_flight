@@ -38,7 +38,7 @@ drag_coefficient: 0.0 -->
 
   <arg name="mass"       default="1.5"/> <!--0.5 in sim -->
   <arg name="grav_acc"   default="9.81"/>
-  <arg name="min_thrust" default="-1.0"/> <!-- any positive number creates bug-->
+  <arg name="min_thrust" default="0.23"/> <!-- any positive number creates bug-->
   <arg name="max_thrust" default="31.0"/>
   <arg name="mav_radius" default="0.20"/>
   <arg name="M_Ixx" default="6.7e-3"/> <!--Make sure these are SAME!-->
@@ -140,15 +140,16 @@ drag_coefficient: 0.0 -->
 
       <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
       <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
-      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <!-- <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/> -->
       <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
-      <!-- <param name='trajectory_planner/Ixx' value="$(arg M_Ixx)"/>
+      <param name='trajectory_planner/Ixx' value="$(arg M_Ixx)"/>
       <param name='trajectory_planner/Iyy' value="$(arg M_Iyy)"/>
-      <param name='trajectory_planner/Izz' value="$(arg M_Izz)"/> -->
+      <param name='trajectory_planner/Izz' value="$(arg M_Izz)"/>
+      <!-- being autotuned by optuna -->
 
-      <!-- <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>   -->
-      <!-- <param name='trajectory_planner/kf' value="$(arg kf)"/>
-      <param name='trajectory_planner/km' value="$(arg km)"/> -->
+      <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>  
+      <param name='trajectory_planner/kf' value="$(arg kf)"/>
+      <param name='trajectory_planner/km' value="$(arg km)"/>
 
     </node>
     
@@ -172,14 +173,14 @@ drag_coefficient: 0.0 -->
 
       <param name="trajectory_planner/VehicleMass" value="$(arg mass)"/>
       <param name="trajectory_planner/GravAcc"     value="$(arg grav_acc)"/>
-      <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/>
+      <!-- <param name="trajectory_planner/MinThrust"   value="$(arg min_thrust)"/> -->
       <param name="trajectory_planner/MaxThrust"   value="$(arg max_thrust)"/>
-      <!-- <param name='trajectory_planner/Ixx' value="$(arg M_Ixx)"/>
+      <param name='trajectory_planner/Ixx' value="$(arg M_Ixx)"/>
       <param name='trajectory_planner/Iyy' value="$(arg M_Iyy)"/>
       <param name='trajectory_planner/Izz' value="$(arg M_Izz)"/>
       <param name='trajectory_planner/arm_length' value="$(arg arm_length)"/>  
       <param name='trajectory_planner/kf' value="$(arg kf)"/>
-      <param name='trajectory_planner/km' value="$(arg km)"/> -->
+      <param name='trajectory_planner/km' value="$(arg km)"/>
 
     </node>
 

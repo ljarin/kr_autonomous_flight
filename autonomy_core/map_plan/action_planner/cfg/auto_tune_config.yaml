@@ -7,23 +7,29 @@ common:
     type: "int"
     bounds: [1, 100]
 iLQR(Altro):
-  - name: "param1"
+  # - name: "altro_ini_penalty"
+  #   type: "float"
+  #   bounds: [1, 100]
+  # - name: "altro_penalty_scale"
+  #   type: "float"
+  #   bounds: [5, 100]
+  - name: "altro_dt"
     type: "float"
-    bounds: [0.0, 1.0]
-  - name: "param2"
-    type: "int"
-    bounds: [1, 100]
+    bounds: [0.001, 0.1]
+  # - name: "moment_of_inertia_each"
+  #   type: "float"
+  #   bounds: [0.1, 10.0]
 MPL:
-  - name: "param1"
+  - name: "param3"
     type: "float"
     bounds: [0.0, 1.0]
-  - name: "param2"
+  - name: "param4"
     type: "int"
     bounds: [1, 100]
 JPS (geometric):
-  - name: "param1"
+  - name: "param5"
     type: "float"
     bounds: [0.0, 1.0]
-  - name: "param2"
+  - name: "param6"
     type: "int"
     bounds: [1, 100]

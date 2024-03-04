@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <action_planner/LocalPlannerConfig.h>
 
 class PlannerType {
  public:
@@ -53,7 +54,9 @@ class PlannerType {
   virtual std::tuple<kr_planning_msgs::SplineTrajectory,
                      kr_planning_msgs::SplineTrajectory,
                      kr_planning_msgs::TrajectoryDiscretized>
-  plan_composite(const MPL::Waypoint3D& start,
+  plan_composite( 
+                 const action_planner::LocalPlannerConfig& config, 
+                 const MPL::Waypoint3D& start,
                  const MPL::Waypoint3D& goal,
                  const kr_planning_msgs::VoxelMap& map,
                  const kr_planning_msgs::VoxelMap& map_no_inflation,
@@ -66,6 +69,10 @@ class PlannerType {
     return std::make_tuple(kr_planning_msgs::SplineTrajectory(),
                            kr_planning_msgs::SplineTrajectory(),
                            kr_planning_msgs::TrajectoryDiscretized());
+  }
+
+  virtual void setConfig(const action_planner::LocalPlannerConfig& config) {
+    ROS_ERROR("[Plannner Details]:setConfig not implemented");
   }
 
   virtual MPL::Waypoint3D evaluate(double t) = 0;
@@ -106,7 +113,8 @@ class CompositePlanner : public PlannerType {
   std::tuple<kr_planning_msgs::SplineTrajectory,
              kr_planning_msgs::SplineTrajectory,
              kr_planning_msgs::TrajectoryDiscretized>
-  plan_composite(const MPL::Waypoint3D& start,
+  plan_composite(const action_planner::LocalPlannerConfig& config,
+                 const MPL::Waypoint3D& start,
                  const MPL::Waypoint3D& goal,
                  const kr_planning_msgs::VoxelMap& map,
                  const kr_planning_msgs::VoxelMap& map_no_inflation,
@@ -131,13 +139,26 @@ class iLQR_Planner : public PlannerType {
  public:
   explicit iLQR_Planner(const ros::NodeHandle& nh, const std::string& frame_id)
       : PlannerType(nh, frame_id) {}
-
-  void setup();
+  void setup(){};
+  void setup(const double& moment_of_inertia_each, const double& dt_ilqr);
   kr_planning_msgs::TrajectoryDiscretized plan_discrete(
       const MPL::Waypoint3D& start,
       const MPL::Waypoint3D& goal,
       const kr_planning_msgs::VoxelMap& map);
   MPL::Waypoint3D evaluate(double t);
+
+  void setConfig(const action_planner::LocalPlannerConfig& config) {
+    this->setup(config.moment_of_inertia_each, config.altro_dt);
+    // ros::NodeHandle nh = ros::NodeHandle("~");
+    // sampler_->mpc_solver->altro_ini_penalty = config.altro_ini_penalty;
+    // sampler_->mpc_solver->altro_penalty_scale = config.altro_penalty_scale;
+    // sampler_->mpc_solver->model_ptr->moment_of_inertia_(0,0) =
+    //     config.moment_of_inertia_each;
+    // sampler_->mpc_solver->model_ptr->moment_of_inertia_(1,1) =
+    //     config.moment_of_inertia_each;
+    // sampler_->mpc_solver->model_ptr->moment_of_inertia_(2,2) =
+    //     config.moment_of_inertia_each;
+  }
 
  private:
   SplineTrajSampler::Ptr sampler_;

@@ -72,14 +72,18 @@ class LocalPlanServer {
   std::string frame_id_, poly_srv_name_;
   bool use_discrete_traj_;
   bool use_tracker_client_;
+
+    // dynamic reconfigure params
+  double params_mass_;
+  double params_;
+  action_planner::LocalPlannerConfig config_;
   
   dynamic_reconfigure::Server<action_planner::LocalPlannerConfig> server_;
   void reconfigureCallback(action_planner::LocalPlannerConfig &config, uint32_t level)
   {
     // Handle the parameter changes here
-    ROS_INFO("Reconfigure Request: param1 = %f, param2 = %d", 
-                config.param1, config.param2);
-
+    ROS_INFO("Received reconfigure request");
+    config_ = config;
     // Update your node's operation based on the new parameters
   }
 

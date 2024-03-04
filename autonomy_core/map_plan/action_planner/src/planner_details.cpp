@@ -6,7 +6,7 @@
 //
 // Double Descrisption Planner
 //
-void OptPlanner::iLQR_Planner::setup() {
+void OptPlanner::iLQR_Planner::setup(const double& moment_of_inertia_each = 1.0, const double& dt_ilqr = 0.1) {
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
   ROS_WARN("[LocalPlanServer:] iLQR planner mode!!!!!");
   ROS_WARN("+++++++++++++++++++++++++++++++++++");
@@ -14,15 +14,16 @@ void OptPlanner::iLQR_Planner::setup() {
   bool publish_optimized_traj = false;
   bool publish_viz = true;  // N sample, time limit
   // ros::NodeHandle nh = ros::NodeHandle("~");  // to get parameters
-  double dt_ilqr;
-  nh_.param("ilqr_dt", dt_ilqr, 0.1);
+  // double dt_ilqr;
+  // nh_.param("ilqr_dt", dt_ilqr, 0.1);
   ROS_INFO("dt_ilqr = : %f", dt_ilqr);
   sampler_.reset(
       new SplineTrajSampler(nh_,
                             subscribe_to_traj,
                             publish_optimized_traj,
                             publish_viz,
-                            dt_ilqr));  // good if multiple of 5, then it will
+                            dt_ilqr,
+                            moment_of_inertia_each));  // good if multiple of 5, then it will
                                         // automatically return +1 elements
                                         // this is the number of controls
 }
@@ -965,6 +966,7 @@ std::tuple<kr_planning_msgs::SplineTrajectory,
            kr_planning_msgs::SplineTrajectory,
            kr_planning_msgs::TrajectoryDiscretized>
 CompositePlanner::plan_composite(
+    const action_planner::LocalPlannerConfig& config, 
     const MPL::Waypoint3D& start,
     const MPL::Waypoint3D& goal,
     const kr_planning_msgs::VoxelMap& map,
@@ -975,6 +977,9 @@ CompositePlanner::plan_composite(
     int& success_status) {
   // success status = 0: no success 1: front success 2: poly_gen_success 3: back
   // success
+  search_planner_type_->setConfig(config);
+  opt_planner_type_->setConfig(config);
+
   auto start_timer = std::chrono::high_resolution_clock::now();
   kr_planning_msgs::SplineTrajectory search_result =
       search_planner_type_->plan(start, goal, map);
